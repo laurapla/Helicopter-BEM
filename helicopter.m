@@ -52,7 +52,7 @@ thetaideal = alpha+phiideal;
 % Càlcul de la solidesa
 sigmaideal = zeros(1,nnodes);
 cideal = zeros(1,nnodes);
-nb = 7;
+nb = 6; % calculat més endavant amb la BEM
 for i = 1:nnodes
     sigmaideal(i) = 8*r(i)*lambdai^2/((r(i)^2+lambdai^2)*(Cl*cos(phiideal(i))-Cd*sin(phiideal(i))));
     cideal(i) = sigmaideal(i)*pi*R/nb;
@@ -137,3 +137,8 @@ plot(r,lambda);
 xlabel('r');
 ylabel('\lambda_{i}');
 title('BEM sense pèrdues');
+
+nb = ceil(sigma(1)*pi*R/0.5);
+if nb>=7
+    nb = ceil(sigma(1)*pi*R/0.75);
+end

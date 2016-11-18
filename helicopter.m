@@ -3,26 +3,26 @@ clc;
 
 %% Data input
 
-% Coses fÌsiques
+% Coses f√≠siques
 m = 4500; %[kg]
 DL = 350; %[N/m^2]
 Mtip = 0.5;
 h = 1500; %[m]
 
-% Coses numËriques
+% Coses num√®riques
 nelem = 20;
 
 % Constants
 g = 9.81; %[m/s^2]
 
-% Coses Úptimes 
+% Coses √≤ptimes 
 Cl = 0.615;
 Cd = 0.016;
 alpha = degtorad(5); %[rad]
 
 nnodes = nelem+1;
 
-%% Pre-c‡lculs
+%% Pre-c√†lculs
 
 W = m*g;
 A = W/DL; %[m^2]
@@ -42,22 +42,22 @@ Omegadisseny = vtip/R; %[rad/s]
 vi = sqrt(W/(2*rho*A));
 lambdai = vi/(vtip);
 
-% DiscretitzaciÛ
+% Discretitzaci√≥
 r = linspace(0,1,nnodes);
 
 % Angles
 phiideal = atan(lambdai./r);
 thetaideal = alpha+phiideal;
 
-% C‡lcul de la solidesa
+% C√†lcul de la solidesa
 sigmaideal = zeros(1,nnodes);
 cideal = zeros(1,nnodes);
-nb = 6; % calculat mÈs endavant amb la BEM
+nb = 6; % calculat m√©s endavant amb la BEM
 for i = 1:nnodes
     sigmaideal(i) = 8*r(i)*lambdai^2/((r(i)^2+lambdai^2)*(Cl*cos(phiideal(i))-Cd*sin(phiideal(i))));
     cideal(i) = sigmaideal(i)*pi*R/nb;
     
-    % AixÚ no Ès absolutament necessari
+    % Aix√≤ no √©s absolutament necessari
     if sigmaideal(i)<0
         sigmaideal(i) = 0;
     end
@@ -85,24 +85,25 @@ end
 % ylabel('\theta')
 % title('BEM ideal')
 
-%% BEM sense pËrdues
+%% BEM sense p√®rdues
 
 for i = 1:nnodes
     if r(i)<=0.7 && r(i+1)>0.7
+        l=i;
         break;
     end
 end
 
-sigma1 = (sigmaideal(i+1)-sigmaideal(i-1))/(r(i+1)-r(i-1));
-sigma0 = sigmaideal(i)-sigma1*r(i);
+sigma1 = (sigmaideal(l+1)-sigmaideal(l-1))/(r(l+1)-r(l-1));
+sigma0 = sigmaideal(l)-sigma1*r(l);
 sigma = zeros(1,nnodes);
 for jm = 1:nnodes
     sigma(jm) = sigma0+sigma1*r(jm);
 end
 
-theta1 = (thetaideal(i+1)-thetaideal(i-1))/(r(i+1)-r(i-1));
+theta1 = (thetaideal(l+1)-thetaideal(l-1))/(r(l+1)-r(l-1));
 
-% Per comprovar que l'aproximaciÛ lineal de sigma quadra
+% Per comprovar que l'aproximaci√≥ lineal de sigma quadra
 figure;
 plot(r,sigmaideal,r,sigma)
 legend('\sigma ideal','\sigma aproximada (r=0.7)')
@@ -136,7 +137,7 @@ figure;
 plot(r,lambda);
 xlabel('r');
 ylabel('\lambda_{i}');
-title('BEM sense pËrdues');
+title('BEM sense p√®rdues');
 
 nb = ceil(sigma(1)*pi*R/0.5);
 if nb>=7

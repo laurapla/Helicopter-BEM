@@ -66,6 +66,11 @@ for i = 1:nnodes
     end
 end
 
+T1=2*rho*pi*R^4*Omegadisseny^2*lambdai^2;
+Pi1=T1*vi;
+Po1v=0.5*rho*(Omegadisseny*R)^3*pi*R^2*sigmaideal.*r.^3;
+Po1=trapz(Po1v);
+
 % figure;
 % plot(r,sigmaideal);
 % axis([0 1 0 1]);

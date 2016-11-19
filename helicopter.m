@@ -148,3 +148,7 @@ nb = ceil(sigma(1)*pi*R/0.5);
 if nb>=7
     nb = ceil(sigma(1)*pi*R/0.75);
 end
+
+c=sigma*pi*R/nb;
+Po2v=nb*rho*0.5*(Omegadisseny*R)^2*0.0051*R^2*Omegadisseny*c.*(r.^2).*sqrt(r.^2+lambda.^2);
+Po2=trapz(Po2v);

@@ -1,4 +1,4 @@
-clear all;
+% clear all;
 clc;
 
 %% Data input
@@ -8,9 +8,11 @@ m = 4500; %[kg]
 DL = 350; %[N/m^2]
 Mtip = 0.5;
 h = 1500; %[m]
+vc = 0; % velocitat endavant [m/s]
+rroot = 0.1;
 
 % Coses numÃ¨riques
-nelem = 20;
+nelem = 100;
 
 % Constants
 g = 9.81; %[m/s^2]
@@ -41,9 +43,10 @@ Omegadisseny = vtip/R; %[rad/s]
 % Aplicant MTH
 vi = sqrt(W/(2*rho*A));
 lambdai = vi/(vtip);
+lambdac = vc/vtip;
 
 % DiscretitzaciÃ³
-r = linspace(0,1,nnodes);
+r = linspace(rroot,1,nnodes);
 
 % Angles
 phiideal = atan(lambdai./r);
@@ -117,8 +120,8 @@ grid on
 lambda = zeros(1,nnodes);
 
 for i = 1:nnodes
-    lambda1 = 1;
-    lambda2 = -0.001;
+    lambda1 = 0.1;
+    lambda2 = 0.01;
     F1 = 8*r(i)*lambda1^2-sigma(i)*(r(i)^2+lambda1^2)*(Cl*cos(atan(lambda1/r(i)))-Cd*sin(atan(lambda1/r(i))));
     F2 = 8*r(i)*lambda2^2-sigma(i)*(r(i)^2+lambda2^2)*(Cl*cos(atan(lambda2/r(i)))-Cd*sin(atan(lambda2/r(i))));
     if F1*F2<0
@@ -152,3 +155,88 @@ end
 c=sigma*pi*R/nb;
 Po2v=nb*rho*0.5*(Omegadisseny*R)^2*0.0051*R^2*Omegadisseny*c.*(r.^2).*sqrt(r.^2+lambda.^2);
 Po2=trapz(Po2v);
+
+%% BEM+pèrdues+compressibilitat
+
+lambdaPrandtl = zeros(1,nnodes);
+FPrandtl = zeros(1,nnodes);
+phiPrandtl = zeros(1,nnodes);
+
+for i = 1:nnodes
+    
+    % Extrems per fer Bolzano
+    lambda1P = 0.1;
+    lambda2P = 0.01;
+    
+    % Càlcul de phi per lambda1 (Prandtl)
+    phi21 = atan((lambdac+lambda1P)/r(i));
+    phi11 = phi21+1;
+    
+    while abs(phi11-phi21)>1e-2
+        phi11 = phi21;
+        F1 = Prandtl(phi11,nb,r(i),rroot);
+        phi21 = 0.5*(phi11+atan((lambdac+lambda1P/F1)/r(i)));
+    end
+    
+    % Càlcul de phi per lambda2 (Prandtl)
+    phi22 = atan((lambdac+lambda2P)/r(i));
+    phi12 = phi22+1;
+    
+    while abs(phi12-phi22)>1e-2
+        phi12 = phi22;
+        F2 = Prandtl(phi12,nb,r(i),rroot);
+        phi22 = 0.5*(phi12+atan((lambdac+lambda2P/F2)/r(i)));
+    end
+    
+    % Càlcul de les funcions BEM per a lambda1 i lambda2
+    Funcio1 = 8*r(i)*lambda1P^2-sigma(i)*(r(i)^2+lambda1P^2)*(Cl*cos(phi21)-Cd*sin(phi21));
+    Funcio2 = 8*r(i)*lambda2P^2-sigma(i)*(r(i)^2+lambda2P^2)*(Cl*cos(phi22)-Cd*sin(phi22));
+    
+    % Bolzano
+    if Funcio1*Funcio2<0
+        Funcio3 = 1;
+        while abs(Funcio1-Funcio2)>1e-5
+            lambda3P = (lambda1P+lambda2P)/2;
+            
+            % Càlcul de phi per lambda3 (Prandtl)
+            phi23 = atan((lambdac+lambda3P)/r(i));
+            phi13 = phi23+1;
+            while abs(phi13-phi23)>1e-2
+                phi13 = phi23;
+                F3 = Prandtl(phi13,nb,r(i),rroot);
+                phi23 = 0.5*(phi13+atan((lambdac+lambda3P/F3)/r(i)));
+            end
+            
+            % Càlcul de la funció BEM per lambda3
+            Funcio3 = 8*r(i)*lambda3P^2-sigma(i)*(r(i)^2+lambda3P^2)*(Cl*cos(phi23)-Cd*sin(phi23));
+            
+            % Comparació per fer Bolzano
+            if  Funcio3*Funcio2<0
+                lambda1P = lambda3P;
+                Funcio1 = Funcio3;
+            elseif  Funcio3*Funcio1<0
+                lambda2P = lambda3P;
+                Funcio2 = Funcio3;
+            end
+        end
+    else
+        % no assigna valors als punts en què Bolzano no convergeix
+        lambda3P = NaN;
+        F3 = NaN;
+        phi23 = NaN;
+    end
+    
+    lambdaPrandtl(i) = lambda3P;
+    FPrandtl(i) = F3;
+    phiPrandtl(i) = phi23;
+end
+
+figure;
+plot(r,lambda,r,lambdaPrandtl);
+title('BEM+pèrdues');
+legend('\lambda sense pèrdues','\lambda amb pèrdues');
+
+figure;
+plot(r,FPrandtl);
+xlabel('r');
+ylabel('F');

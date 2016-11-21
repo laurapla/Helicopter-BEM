@@ -105,8 +105,8 @@ end
 sigma1 = (sigmaideal(l+1)-sigmaideal(l-1))/(r(l+1)-r(l-1));
 sigma0 = sigmaideal(l)-sigma1*r(l);
 sigma = zeros(1,nnodes);
-for jm = 1:nnodes
-    sigma(jm) = sigma0+sigma1*r(jm);
+for j = 1:nnodes
+    sigma(j) = sigma0+sigma1*r(j);
 end
 
 theta1 = (thetaideal(l+1)-thetaideal(l-1))/(r(l+1)-r(l-1));
@@ -130,13 +130,16 @@ for i = 1:nnodes
         F3 = 1;
         while abs(F1-F2)>1e-5
             lambda3 = (lambda1+lambda2)/2;
-            F3 = 8*r(i)*lambda3^2-sigma(i)*(r(i)^2+lambda3^2)*(Cl*cos(atan(lambda3/r(i)))-Cd*sin(atan(lambda3/r(i))));
+            phi3 = atan((lambdac+lambda3)/r(i));
+            F3 = 8*r(i)*lambda3^2-sigma(i)*(r(i)^2+lambda3^2)*(Cl*cos(phi3)-Cd*sin(phi3));
             if  F3*F2<0
                 lambda1 = lambda3;
-                F1 = 8*r(i)*lambda1^2-sigma(i)*(r(i)^2+lambda1^2)*(Cl*cos(atan(lambda1/r(i)))-Cd*sin(atan(lambda1/r(i))));
+                phi1 = atan((lambdac+lambda1)/r(i));
+                F1 = 8*r(i)*lambda1^2-sigma(i)*(r(i)^2+lambda1^2)*(Cl*cos(phi1)-Cd*sin(phi1));
             elseif  F3*F1<0
                 lambda2 = lambda3;
-                F2 = 8*r(i)*lambda2^2-sigma(i)*(r(i)^2+lambda2^2)*(Cl*cos(atan(lambda2/r(i)))-Cd*sin(atan(lambda2/r(i))));
+                phi2 = atan((lambdac+lambda2)/r(i));
+                F2 = 8*r(i)*lambda2^2-sigma(i)*(r(i)^2+lambda2^2)*(Cl*cos(phi2)-Cd*sin(phi2));
             end
         end
     end

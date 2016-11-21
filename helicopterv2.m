@@ -167,17 +167,17 @@ while abs(Thrust-W)>er
             
         while abs(error)> er2
     
-            phideg(i,j) = atan(lambdait/r(i))*(180/pi);               % angle de la velocitat incident [deg]
+            phideg(i,j) = atan((lambdait+lambdac(j))/r(i))*(180/pi);               % angle de la velocitat incident [deg]
             alpha(i,j) = thetaT(i,j)-phideg(i,j);                              % angle d'atac [deg]
-0            M(i,j) = vtip * sqrt( ( (lambdait+lambdac(j))^2 + r(i)^2 ) )/a;         % numero de Mach a l'element de pala
+            M(i,j) = vtip * sqrt( ( (lambdait+lambdac(j))^2 + r(i)^2 ) )/a;         % numero de Mach a l'element de pala
             [cl(i,j),cd(i,j)] = computeClCd(alpha(i,j), M(i,j));                       % coeficients aerodinamics de l'element de pala
         
             K(i,j) = cl(i,j)*cos(phiideal(i,j))-Cd*sin(phiideal(i,j));
             
             AA=8*r(i); BB=lambdac(j); CC=r(i)^2; EE = sigma(i,j)* K(i,j);
            
-            lambdNEW = (-BB*(AA-2*EE)+ sqrt( BB^2 * (AA-2*EE)^2 + 4*(AA-EE)*EE*(CC-BB^2)))/(2*(AA-EE));
-        
+            lambdNEW = (-BB*(AA-2*EE)+ sqrt( BB^2 * (AA-2*EE)^2 - 4*(AA-EE)*EE*(CC-BB^2)))/(2*(AA-EE)); 
+            
             error = lambdait-lambdNEW;
         
             if abs(error)>er2
@@ -197,12 +197,13 @@ end
     P0 = 0;     % inicialitzaci� de la pot�ncia par�sita [W]
     
  for j=1:length(Vc)
+    Thrust(j)=0; 
+    Pi(j)=0;
     for i=1:nnodes
 
         phi(i,j) = atan(lambda(i,j)/r(i)); phideg(i,j) = phi(i,j)*(180/pi);            % angle de la velocitat incident [deg]
         alphadeg (i,j) = thetaT(i,j)-phideg(i,j);  alpha(i,j) = alphadeg(i,j)*(pi/180);                  % angle d'atac [deg]
-        M = vtip*sqrt((lambda(i,j)+lambdac(j))^2+r(i)^2)/a; % numero de Mach a l'element de pala
-
+       
         [cl(i,j),cd(i,j)] = computeClCd(alphadeg(i,j), M(i,j));               % funci� que d�na Cl i Cd en funci� d'alpha i Mach
 
         K2 = cl(i,j)*cos(phi(i,j))-cd(i,j)*sin(phi(i,j));  % coeficient utilitzat per partir l'expressi� del dT
@@ -229,15 +230,15 @@ Po2v=nb*rho*0.5*(Omegadisseny*R)^2*0.0051*R^2*Omegadisseny*c.*(r.^2).*sqrt(r.^2+
 Po2=trapz(Po2v);
 
 
-% figure
-% 
-% grid on
-% plot(Vc, Pi_total);
+figure
+
+grid on
+plot(Vc, Pi_total);
 
 
-% figure;
-% plot(r,lambda);
-% xlabel('r');
-% ylabel('\lambda_{i}');
-% title('BEM sense pèrdues');
+figure;
+plot(r,lambda);
+xlabel('r');
+ylabel('\lambda_{i}');
+title('BEM sense pèrdues');
 

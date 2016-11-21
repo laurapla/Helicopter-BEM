@@ -122,8 +122,10 @@ lambda = zeros(1,nnodes);
 for i = 1:nnodes
     lambda1 = 0.1;
     lambda2 = 0.01;
-    F1 = 8*r(i)*lambda1^2-sigma(i)*(r(i)^2+lambda1^2)*(Cl*cos(atan(lambda1/r(i)))-Cd*sin(atan(lambda1/r(i))));
-    F2 = 8*r(i)*lambda2^2-sigma(i)*(r(i)^2+lambda2^2)*(Cl*cos(atan(lambda2/r(i)))-Cd*sin(atan(lambda2/r(i))));
+    phi1 = atan((lambdac+lambda1)/r(i));
+    phi2 = atan((lambdac+lambda2)/r(i));
+    F1 = 8*r(i)*lambda1^2-sigma(i)*(r(i)^2+lambda1^2)*(Cl*cos(phi1)-Cd*sin(phi1));
+    F2 = 8*r(i)*lambda2^2-sigma(i)*(r(i)^2+lambda2^2)*(Cl*cos(phi2)-Cd*sin(phi2));
     if F1*F2<0
         F3 = 1;
         while abs(F1-F2)>1e-5

@@ -1,4 +1,4 @@
-% clear all;
+clear all;
 clc;
 
 %% Data input
@@ -163,6 +163,9 @@ FPrandtl = zeros(1,nnodes);
 phiPrandtl = zeros(1,nnodes);
 
 for i = 1:nnodes
+    
+    % Càlcul dels coeficients
+    [Cl,Cd] = computeClCd(5,Omegadisseny*r(i)/a);
     
     % Extrems per fer Bolzano
     lambda1P = 0.1;

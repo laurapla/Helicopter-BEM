@@ -87,7 +87,7 @@ for i=1:nnodes
 end
 
 for i=1:length(Vc)
-   Pi_total(i) = trapz(Pi(:,i));
+   Pi_total(i) = trapz(r,Pi(:,i));
 end
 
 %Calcul de la Potencia Parasita

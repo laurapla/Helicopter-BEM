@@ -38,7 +38,6 @@ rho = 1.225*(Temperature/288.15)^(9810/(6.5*287)-1);
 a = sqrt(1.4*287*Temperature);
 vtip = a*Mtip; %[m/s]
 Omegadisseny = vtip/R; %[rad/s]
-
 %% BEM ideal (MTH)
 
 % Aplicant MTH
@@ -47,7 +46,7 @@ lambdai = vi/(vtip);
 lambdac = Vc / vtip;
 
 % Discretització
-r = linspace(0,1,nnodes);
+r = linspace(0.1,1,nnodes);
 dr = r(end)/nelem;
 
 % Càlcul de angles i solidesa
@@ -89,24 +88,24 @@ end
 
 %Calcul de la Potencia Parasita
 
-% figure;
-% plot(r,sigmaideal);
-% axis([0 1 0 1]);
-% xlabel('r')
-% ylabel('\sigma')
-% title('SIGMA - BEM ideal')
-% 
-% figure;
-% plot(r,cideal);
-% xlabel('r')
-% ylabel('c (m)')
-% title('CORDA - BEM ideal')
-% 
-% figure;
-% plot(r,thetaideal);
-% xlabel('r')
-% ylabel('\theta')
-% title('THETA - BEM ideal')
+figure;
+plot(r,sigmaideal);
+axis([0 1 0 1]);
+xlabel('r')
+ylabel('\sigma')
+title('SIGMA - BEM ideal')
+
+figure;
+plot(r,cideal);
+xlabel('r')
+ylabel('c (m)')
+title('CORDA - BEM ideal')
+
+figure;
+plot(r,thetaideal);
+xlabel('r')
+ylabel('\theta')
+title('THETA - BEM ideal')
 
 fprintf('MTH computed.\n')
 
@@ -141,6 +140,14 @@ end
 
 c=sigma*pi*R/nb;
 
+%Calcul distribucio lift
+
+
+figure;
+plot(r,c);
+xlabel('r')
+ylabel('c (m)')
+title('CORDA - BEM no ideal')
 
 %% Computation of thetaC for each of the Vc
 prec_thrust = 1e-4;  

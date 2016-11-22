@@ -49,7 +49,7 @@ lambdac = Vc / vtip;
 
 % DiscretitzaciÃ³
 r = linspace(rroot,1,nnodes);
-dr = r(end)/nelem;
+dr = r(end)-r(end-1);
 
 % CÃ lcul de angles i solidesa
 % Cada columna de la matriu conte la variable calculada per a una velocitat de climbing
@@ -148,39 +148,51 @@ prec_thrust = 1e-4;
 prec_lambda=1e-8;       % error maxim permes
 error_lambda = 100; 
 nmaxIT=100;
-nmaxITtheta=1000;
+nmaxITtheta=15;
 
 % Preallocation of variables
 thetaT = zeros(nnodes,nVc);
 lambda = zeros(nnodes,nVc); phideg=lambda; alpha=lambda;
 CL = zeros(nnodes,1); 
 CD = zeros(nnodes,1); 
-lc=lambdac(j);  rf=r(i); sigf=sigma(i,j); cl=0.1; cd=cl; dcl=cl; dcd=cl;
+lc=lambdac(j);  rf=r(i); sigf=sigma(i,j); cl=0.5; cd=cl; dcl=cl; dcd=cl;
 
 % Functions arrays
 f=@(li,fi) 8*rf*(lc+li)*li-...
-    (rf^2+(lc+li)^2)*sigf*(cl*cosd(fi))-cd*sind(atand(fi));
+    (rf^2+(lc+li)^2)*sigf*(cl*cosd(fi)-cd*sind(fi));
 
 % Jacobian of the functions
-
 Df=@(li,fi) 8*lc*rf+16*li*rf-2*(lc+li)*sigf*(cl*cosd(fi)-cd*sind(fi))+...
     sigf*rf^2*(dcl*cosd(fi)+cl*sind(fi)-dcd*sind(fi)+cd*cosd(fi)) ;
 
 fprintf('Starting BEM solution\n')
 
-% Verification of the function
-li=-0.2:0.001:0.4; fk=zeros(length(li),1);
-for k=1:length(li)
-        F=f(li(k),10);
-        fk(k)=F;
-end
-plot(li,fk)
-grid on
+%% Verification of the function - LAMBDA
+% li=-0.2:0.001:0.4; fk=zeros(length(li),1);
+% for k=1:length(li)
+%         F=f(li(k),1);
+%         fk(k)=F;
+% end
+% plot(li,fk)
+% grid on
 
+% % Verification of the function - PHI VALUES
+% fi=-180:0.1:180; fk=zeros(length(fi),1); i=10; % Element
+% thetaf=theta(i,1)*180/pi;
+% 
+% for k=1:length(fi)
+%         [cl,cd]   = computeClCd(thetaf-fi(k), 0);         
+%         F=f(0.05,fi(k));
+%         fk(k)=F;
+% end
+% plot(fi,fk)
+% grid on
+
+%% NEWTON METHOD ITERATIONS
 for j=1:length(Vc)
-  
-    thetaC_min = 10;     % angle de pas colectiu minim [deg] (aquell que fa que W>T)
-    thetaC_max = 20;     % angle de pas colectiu maxim [deg] (aquell que fa que W<T)
+    fprintf('\nVc = %g m/s\n',Vc(j)) 
+    thetaC_min = -10;     % angle de pas colectiu minim [deg] (aquell que fa que W>T)
+    thetaC_max = 20;      % angle de pas colectiu maxim [deg] (aquell que fa que W<T)
     
     % Initialized here, no need to compute it every loop for finding theta
     Pi = 0;     % inicialitzacio de la potencia induida [W]
@@ -203,7 +215,7 @@ for j=1:length(Vc)
             %%% LAMBDA COMPUTATION - NEWTON METHOD
             %   Initial values
             li=0.05;
-            fi=10;
+            fi=5;
             
             li_verify(1)=li;
             fi_verify(1)=fi;
@@ -212,19 +224,18 @@ for j=1:length(Vc)
             
             for n=2:nmaxIT
                 
+                fi=atand((lc+li)/rf);
                 [cl,cd]   = computeClCd(theta_r(i)-fi, 0);  
                 [dcl,dcd] = compute_derClCd(theta_r(i)-fi, 0);
                   
-                Ax=-Df(li,atand((lc+li)/rf))\f(li,atand((lc+li)/rf));
-                li=li+Ax;
-                
-                fi=atand((lc+li)/rf);
+                Ax=-Df(li,fi)\f(li,fi);
+                li=li+Ax;        
                 
                 % Convergence Verification
                 if max(abs([f(li,fi) fi-fi_verify(n-1)]))<prec_lambda % Result converged
-                    lambda(i,j)=li;
-                    phideg(i,j)=fi;
-                    fprintf('lambda_i at r(%g)=%g is equal to %g (n=%g)\n',i,r(i),li,n)
+                     lambda(i,j)=li;
+                     phideg(i,j)=fi;
+%                    fprintf('lambda_i at r(%g)=%g is equal to %g (n=%g)\n',i,r(i),li,n)
                     break
                 elseif n==nmaxIT % Result did not converge
 %                    fprintf('lambda_i at r(%g)=%g did not converge ---> mean approach\n',i,r(i))
@@ -251,9 +262,9 @@ for j=1:length(Vc)
     
     % Calcul del Thrust i les potencies
     K2 = CL.*cosd(phideg(:,j))-CD.*sind(phideg(:,j));  % coeficient utilitzat per partir l'expressiï¿½ del dT
-%   dT = 4*pi*rho*R^4*Omegadisseny^2.*lambda(:,j).*(lambda(:,j)+lambdac(j)).*r'*dr;
-    dFz = nb*0.5*rho*c(:,j)*vtip^2*R.*(r'.^2+(lambda(:,j)+lambdac(j)).^2).*K2*dr;   % Calucl diferencial de Thrust
-    Thrust = sum(dFz); 
+    dT = -4*pi*rho*R^4*Omegadisseny^2.*lambda(:,j).*(lambda(:,j)+lambdac(j)).*r'*dr;
+%    dFz = nb*0.5*rho*c(:,j)*vtip^2*R.*(r'.^2+(lambda(:,j)+lambdac(j)).^2).*K2*dr;   % Calucl diferencial de Thrust
+    Thrust = sum(dT); 
     
     fprintf('IT %g: err=%g, T=%gN, W=%gN, thetaC=%gº\n',nt,abs(Thrust-W),Thrust,W,thetaC)
     %error('Please review the results so far for the Lambda solution')
@@ -267,6 +278,9 @@ for j=1:length(Vc)
             thetaC_min = thetaC;                    
         end
     
+        if nt==nmaxITtheta
+            error('Theta no converge bro. A llorar a casa')
+        end
     end
     
     % Guardem la solució

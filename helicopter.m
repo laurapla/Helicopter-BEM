@@ -8,7 +8,7 @@ m = 4500; %[kg]
 DL = 350; %[N/m^2]
 Mtip = 0.5;
 h = 1500; %[m]
-vc = 0; % velocitat endavant [m/s]
+vc = 12.5; % velocitat endavant [m/s]
 rroot = 0.1;
 
 % Coses numèriques
@@ -24,7 +24,7 @@ alpha = degtorad(5); %[rad]
 
 nnodes = nelem+1;
 
-%% Pre-cÃ lculs
+%% Pre-càlculs
 
 W = m*g;
 A = W/DL; %[m^2]
@@ -48,6 +48,7 @@ lambdac = vc/vtip;
 % Discretització
 r = linspace(rroot,1,nnodes);
 dr = r(2)-r(1);
+rtotal = linspace(0,1,nnodes);
 
 % Angles
 phiideal = atan(lambdai./r);
@@ -75,24 +76,24 @@ Pi1=T1*vi;
 Po1v=0.5*rho*(Omegadisseny*R)^3*pi*R^2*sigmaideal.*r.^3;
 Po1=trapz(Po1v);
 
-% figure;
-% plot(r,sigmaideal);
-% axis([0 1 0 1]);
-% xlabel('r')
-% ylabel('\sigma')
-% title('BEM ideal')
-% 
-% figure;
-% plot(r,cideal);
-% xlabel('r')
-% ylabel('c (m)')
-% title('BEM ideal')
-% 
-% figure;
-% plot(r,thetaideal);
-% xlabel('r')
-% ylabel('\theta')
-% title('BEM ideal')
+figure;
+plot(r,sigmaideal);
+axis([0 1 0 1]);
+xlabel('r')
+ylabel('\sigma')
+title('BEM ideal')
+
+figure;
+plot(r,cideal);
+xlabel('r')
+ylabel('c (m)')
+title('BEM ideal')
+
+figure;
+plot(r,thetaideal);
+xlabel('r')
+ylabel('\theta')
+title('BEM ideal')
 
 %% BEM sense pèrdues
 
@@ -141,15 +142,15 @@ while abs(Thrust-W)>=1e-2
         phi2 = atan((lambdac+lambda2)/r(i));
         [Cl1,Cd1] = computeClCd(radtodeg(theta-phi1),0);
         [Cl2,Cd2] = computeClCd(radtodeg(theta-phi2),0);
-        F1 = 8*r(i)*lambda1^2-sigma(i)*(r(i)^2+lambda1^2)*(Cl1*cos(phi1)-Cd1*sin(phi1));
-        F2 = 8*r(i)*lambda2^2-sigma(i)*(r(i)^2+lambda2^2)*(Cl2*cos(phi2)-Cd2*sin(phi2));
+        F1 = 8*r(i)*(lambda1+lambdac)*lambda1-sigma(i)*(r(i)^2+(lambda1+lambdac)^2)*(Cl1*cos(phi1)-Cd1*sin(phi1));
+        F2 = 8*r(i)*(lambda2+lambdac)*lambda2-sigma(i)*(r(i)^2+(lambda2+lambdac)^2)*(Cl2*cos(phi2)-Cd2*sin(phi2));
         if F1*F2<0
             F3 = 1;
             while abs(F1-F2)>1e-5
                 lambda3 = (lambda1+lambda2)/2;
                 phi3 = atan((lambdac+lambda3)/r(i));
                 [Cl3,Cd3] = computeClCd(radtodeg(theta-phi3),0);
-                F3 = 8*r(i)*lambda3^2-sigma(i)*(r(i)^2+lambda3^2)*(Cl3*cos(phi3)-Cd3*sin(phi3));
+                F3 = 8*r(i)*(lambda3+lambdac)*lambda3-sigma(i)*(r(i)^2+(lambda3+lambdac)^2)*(Cl3*cos(phi3)-Cd3*sin(phi3));
                 if  F3*F2<0
                     lambda1 = lambda3;
                     F1 = F3;
@@ -159,8 +160,11 @@ while abs(Thrust-W)>=1e-2
                 end
             end
         else
-            lambda1 = lambda1+0.4;
-            lambda2 = lambda2-0.4;
+            % no assigna valors als punts en què Bolzano no convergeix
+            lambda3 = NaN;
+            Cl3 = NaN;
+            Cd3 = NaN;
+            phi3 = NaN;
         end
         lambda(i) = lambda3;
         phi(i) = phi3;
@@ -170,9 +174,12 @@ while abs(Thrust-W)>=1e-2
     fprintf('lambdai calculada\n')
     
     Thrust = 0;
+    P = 0;
     for i = 1:nnodes
         dT = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(Cl(i)*cos(phi(i))-Cd(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
         Thrust = Thrust+dT;
+        dP = vtip*(lambda(i)+lambdac)*dT;
+        P = P+dP;
     end
     
     if Thrust-W<0
@@ -215,18 +222,22 @@ Po2=trapz(Po2v);
 lambdaPrandtl = zeros(1,nnodes);
 FPrandtl = zeros(1,nnodes);
 phiPrandtl = zeros(1,nnodes);
+thetaPrandtl = zeros(1,nnodes);
 
-while abs(Thrust-W)>=1e-2
+ThrustPrandtl = 0;
+
+while abs(ThrustPrandtl-W)>=1e-2
     
     theta0 = (thetamin+thetamax)/2;
     
     for i = 1:nnodes
         
-        theta = theta0;
+        theta = theta0+theta1*r(i);
+        thetaPrandtl(i) = theta;
         
         % Extrems per fer Bolzano
-        lambda1P = 0.1;
-        lambda2P = 0.001;
+        lambda1P = 1;
+        lambda2P = 0;
         
         % Càlcul de phi per lambda1 (Prandtl)
         phi21 = atan((lambdac+lambda1P)/r(i));
@@ -298,10 +309,13 @@ while abs(Thrust-W)>=1e-2
     
     fprintf('lambdai calculada\n')
     
-    Thrust = 0;
+    ThrustPrandtl = 0;
+    PPrandtl = 0;
     for i = 1:nnodes
         dT = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(Cl(i)*cos(phi(i))-Cd(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
-        Thrust = Thrust+dT;
+        ThrustPrandtl = ThrustPrandtl+dT;
+        dP = vtip*(lambda(i)+lambdac)*dT;
+        PPrandtl = PPrandtl+dP;
     end
     
     if Thrust-W<0
@@ -312,12 +326,19 @@ while abs(Thrust-W)>=1e-2
     
 end
 
-% figure;
-% plot(r,lambda,r,lambdaPrandtl);
-% title('BEM+pèrdues');
-% legend('\lambda sense pèrdues','\lambda amb pèrdues');
-% 
-% figure;
-% plot(r,FPrandtl);
-% xlabel('r');
-% ylabel('F');
+figure;
+plot(r,lambda,r,lambdaPrandtl);
+title('BEM+pèrdues+compressibilitat');
+legend('\lambda sense pèrdues','\lambda amb pèrdues');
+
+figure;
+plot(r,FPrandtl);
+xlabel('r');
+ylabel('F');
+title('BEM+pèrdues+compressibilitat');
+
+figure;
+plot(r,thetaPrandtl);
+xlabel('r');
+ylabel('\theta (rad)');
+title('BEM+pèrdues+compressibilitat');

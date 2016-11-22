@@ -10,6 +10,7 @@ Mtip = 0.5;
 h = 1500; %[m]
 rroot = 0.1;
 n=0;
+nn=0;
 
 % Coses numèriques
 nelem = 20;
@@ -146,91 +147,116 @@ c=sigma*pi*R/nb;
 er = 1e-4;  er2=1e-8;       % error maxim permes
 error = 100; 
 
-Newlambdai = 0;  
-thetaC_min = 2;     % angle de pas colectiu minim [deg] (aquell que fa que W>T)
-thetaC_max = 5;     % angle de pas colectiu maxim [deg] (aquell que fa que W<T)
+ewlambdai = 0;  
+thetamax = 20;
+thetamin = -5;
+Thrust = zeros(1,length(Vc));         % inicialitzacio del Thrust        
+Pi = zeros(1,length(Vc));    % inicialitzaci� de la pot�ncia indu�da [W]
+P0 = zeros(1,length(Vc));  % inicialitzci� de la pot�ncia par�sita [W]c
 
-Thrust = 0;         % inicialitzacio del Thrust         
 
-while abs(Thrust-W)>er
-    Thrust-W
+for j=1:length(Vc)
     
-    theta0(j) = 0.5*(thetaC_max+thetaC_min);   % calcul del punt mig de l'interval 
-    
-        % Camp de velocitats induides
- for j=1:length(Vc)
-    
-    for i=1:nnodes
-        lambdait(1) = lambdai1;          % inicialitzaci� de lambda a la de Hovering [-]
-        theta(i,j) = theta0(j)*(pi/180)+theta1(j)*r(i);  thetadeg(i,j) = theta(i,j)*(180/pi);  % angle theta [deg]  
-        error = 2;
-         n=0;
-        while abs(error)> er2
-               n=n+1;
-               phiit= atan((lambdait(n)+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);               % angle de la velocitat incident [deg]
-               alphait= thetadeg(i,j)-phiitdeg;                              % angle d'atac [deg]
-               Mit = vtip * sqrt( ( (lambdait(n)+lambdac(j))^2 + r(i)^2 ) )/a;         % numero de Mach a l'element de pala
-               [clit,cdit] = computeClCd(alphait, Mit);                       % coeficients aerodinamics de l'element de pala
-        
-               Kit = clit*cos(phiit)-cdit*sin(phiit);
-               
-               if Kit<=0 Kit=1; end
-            
-               AA=8*r(i); BB=lambdac(j); CC=r(i)^2; EE = sigma(i,j)* Kit;
-               Newlambdai = (-BB*(AA-2*EE)+ sqrt( BB^2 * (AA-2*EE)^2 + 4*(AA-EE)*EE*(CC+BB^2)))/(2*(AA-EE));
-           
-               error = lambdait(n)-Newlambdai;
-                   i
-                   error
-        
-                if abs(error)>er2
-                lambdait(n+1) = 0.5*(Newlambdai+lambdait(n));
-                
-                else
-                lambda(i,j) = lambdait(n);
+    while abs(Thrust(j)-W)>er
+        Thrust(j)-W
        
-                end
-            
-        end
-   
-    end
-end
-
-        % Calcul del Thrust i les pot�ncies indu�des i par�sites
-    Thrust = 0; % inicialitzaci� de l'empenta [N]
-    Pi = 0;     % inicialitzaci� de la pot�ncia indu�da [W]
-    P0 = 0;     % inicialitzaci� de la pot�ncia par�sita [W]
-    
- for j=1:length(Vc)
-    Thrust(j)=0; 
-    Pi(j)=0;
-    for i=1:nnodes
-
-         phi(i,j) = atan((lambda(i,j)+lambdac(j))/r(i));  phideg(i,j) = phi(i,j)*(180/pi);            % angle de la velocitat incident [deg]
-         alpha(i,j) = theta(i,j)-phideg(i,j);  alphadeg(i,j) = alpha(i,j)*(180/pi);                  % angle d'atac [deg]
-         M(i,j) = vtip*sqrt( (lambda(i,j)+lambdac(j))^2 + r(i)^2 )/a;                                    % numero de Mach a l'element de pala
-
-         [cl(i,j),cd(i,j)] = computeClCd(alphadeg(i,j), M(i,j));               % funci� que d�na Cl i Cd en funci� d'alpha i Mach
-
-         K2 = cl(i,j)*cos(phi(i,j))-cd(i,j)*sin(phi(i,j));  % coeficient utilitzat per partir l'expressi� del dT
-
-         dT(j) = nb*0.5*rho*c(i,j)*vtip^2*R*(r(i)^2+(lambda(i,j)+lambdac(j))^2)*K2*dr;   % Calucl diferencial de Thrust
-         Thrust(j) = Thrust(j)+dT(j);            % Thrust de l'helicopter [N]
+        theta0it = 0.5*(thetamax+thetamin);   % calcul del punt mig de l'interval
         
-         dPi(j) = vtip*(lambda(i,j) + lambdac(j))*dT(j);   % Calcul diferencial de potencia induida
-         Pi(j) = Pi(j)+dPi(j);                          % Potencia induida
-    end
-   
-    if Thrust-W>=0
-        thetaC_max = theta0;        
-    else
-        thetaC_min = theta0;        
+        % Camp de velocitats induides
+        
+        
+        for i=1:nnodes
             
+            i
+            lambdait1 = lambdai1;
+            lambdait2 = lambdai1;
+            
+            theta(i,j) = theta0it*(pi/180)+theta1(j)*r(i);  thetadeg(i,j) = theta(i,j)*(180/pi);  % angle theta [deg]
+            F = 9;
+            
+            while abs(F)> er2
+                
+                phiit= atan((lambdait1+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);
+                alphait= thetadeg(i,j)-phiitdeg;
+                Mit = vtip * sqrt( ( (lambdait1+lambdac(j))^2 + r(i)^2 ) )/a;
+                [clit,cdit] = computeClCd(alphait, Mit);
+                Kit = clit*cos(phiit)-cdit*sin(phiit);
+                AA=8*r(i); BB=lambdac(j); CC=r(i)^2; EE = sigma(i,j)* Kit;
+                
+                F1 = AA*(BB*+lambdait1)*lambdait1-(CC*+(lambdait1+BB)^2)*EE;
+                
+                
+                phiit= atan((lambdait2+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);
+                alphait= thetadeg(i,j)-phiitdeg;
+                Mit = vtip * sqrt( ( (lambdait2+lambdac(j))^2 + r(i)^2 ) )/a;
+                [clit,cdit] = computeClCd(alphait, Mit);
+                Kit = clit*cos(phiit)-cdit*sin(phiit);
+                AA=8*r(i); BB=lambdac(j); CC=r(i)^2; EE = sigma(i,j)* Kit;
+                
+                F2 = AA*(BB*+lambdait2)*lambdait2-(CC*+(lambdait2+BB)^2)*EE;
+                
+                
+                if F1*F2 <=0
+                    
+                    lambdait = 0.5*(lambdait1+lambdait2);
+                    
+                    phiit= atan((lambdait+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);
+                    alphait= thetadeg(i,j)-phiitdeg;
+                    Mit = vtip * sqrt( ( (lambdait+lambdac(j))^2 + r(i)^2 ) )/a;
+                    [clit,cdit] = computeClCd(alphait, Mit);
+                    Kit = clit*cos(phiit)-cdit*sin(phiit);
+                    AA=8*r(i); BB=lambdac(j); CC=r(i)^2; EE = sigma(i,j)* Kit;
+                    
+                    F = AA*(BB*+lambdait)*lambdait-(CC*+(lambdait+BB)^2)*EE;
+                    
+                    if abs(F)<= er2
+                        lambda(i,j) = lambdait;
+                    else
+                        if F*F1<0
+                            lambdait2 = lambdait; 
+                        else
+                            lambdait1 = lambdait; 
+                        end
+                    end
+                    
+                else
+                    
+                    lambdait2 = lambdait2+0.0002;
+                    lambdait1 = lambdait1-0.0002;
+                end
+                
+            end
+            
+            phi(i,j) = atan((lambda(i,j)+lambdac(j))/r(i));  phideg(i,j) = phi(i,j)*(180/pi);            % angle de la velocitat incident [deg]
+            alpha(i,j) = theta(i,j)-phi(i,j);  alphadeg(i,j) = alpha(i,j)*(180/pi);                  % angle d'atac [deg]
+            M(i,j) = vtip*sqrt( (lambda(i,j)+lambdac(j))^2 + r(i)^2 )/a;                                    % numero de Mach a l'element de pala
+            
+            [cl(i,j),cd(i,j)] = computeClCd(alphadeg(i,j), M(i,j));               % funci� que d�na Cl i Cd en funci� d'alpha i Mach
+            
+            K2 = cl(i,j)*cos(phi(i,j))-cd(i,j)*sin(phi(i,j));  % coeficient utilitzat per partir l'expressi� del dT
+            
+            dT(j) = nb*0.5*rho*c(i,j)*vtip^2*R*(r(i)^2+(lambda(i,j)+lambdac(j))^2)*K2*dr;   % Calucl diferencial de Thrust
+            Thrust(j) = Thrust(j)+dT(j);            % Thrust de l'helicopter [N]
+            
+            dPi(j) = vtip*(lambda(i,j) + lambdac(j))*dT(j);   % Calcul diferencial de potencia induida
+            Pi(j) = Pi(j)+dPi(j);                          % Potencia induida
+        end
+        
+        if abs(Thrust(j)-W)> er
+           
+            if Thrust(j)-W>=0
+               thetamax = theta0it;
+            else
+            thetamin = theta0it;
+            
+            end
+        else
+            theta0(j)=theta0it;
+        end
     end
- end
 end
 
- 
+
 
 % Po2v=nb*rho*0.5*(Omegadisseny*R)^2*0.0051*R^2*Omegadisseny*c.*(r.^2).*sqrt(r.^2+lambda.^2);
 % Po2=trapz(Po2v);

@@ -51,7 +51,7 @@ lambdac = Vc / vtip;
 
 % Discretització
 r = linspace(rroot,1,nnodes);
-dr = r(end)/nelem;
+dr = r(end)-r(end-1);
 
 % Càlcul de angles i solidesa
 % Cada columna de la matriu conte la variable calculada per a una velocitat de climbing
@@ -149,8 +149,9 @@ error = 100;
 
 ewlambdai = 0;  
 thetamax = 20;
-thetamin = -5;
-Thrust = zeros(1,length(Vc));         % inicialitzacio del Thrust        
+thetamin = 5;
+Thrust = zeros(1,length(Vc)); 
+Thrust2 = zeros(1,length(Vc)); % inicialitzacio del Thrust        
 Pi = zeros(1,length(Vc));    % inicialitzaci� de la pot�ncia indu�da [W]
 P0 = zeros(1,length(Vc));  % inicialitzci� de la pot�ncia par�sita [W]c
 
@@ -158,8 +159,8 @@ P0 = zeros(1,length(Vc));  % inicialitzci� de la pot�ncia par�sita [W]c
 for j=1:length(Vc)
     
     while abs(Thrust(j)-W)>er
-        Thrust(j)-W
-       
+        
+        n=n+1;
         theta0it = 0.5*deg2rad(thetamax+thetamin);   % calcul del punt mig de l'interval
         
         % Camp de velocitats induides
@@ -173,6 +174,7 @@ for j=1:length(Vc)
             
             theta(i,j) = theta0it+theta1(j)*r(i);  thetadeg(i,j) = rad2deg(theta(i,j));  % angle theta [deg]
             F = 9;
+           
             
             while abs(F)> er2
                 
@@ -235,19 +237,24 @@ for j=1:length(Vc)
             
             K2 = cl(i,j)*cos(phi(i,j))-cd(i,j)*sin(phi(i,j));  % coeficient utilitzat per partir l'expressi� del dT
             
-            dT(j) =- nb*0.5*rho*c(i,j)*vtip^2*R*(r(i)^2+(lambda(i,j)+lambdac(j))^2)*K2*dr;   % Calucl diferencial de Thrust
-            Thrust(j) = Thrust(j)+dT(j)          % Thrust de l'helicopter [N]
-            
+            dT(j) = -nb*0.5*rho*c(i,j)*vtip^2*R*(r(i)^2+(lambda(i,j)+lambdac(j))^2)*K2*dr;  
+            dT2(j) = 4*pi*rho*vtip^2*R^2*r(i)*lambda(i,j)*(lambdac(j)+ lambda(i,j))*dr;
+            Thrust(j) = Thrust(j)+dT(j)
+            Thrust2(j)= Thrust2(j)+dT2(j)
+            thet(n)=theta0it;
             dPi(j) = vtip*(lambda(i,j) + lambdac(j))*dT(j);   % Calcul diferencial de potencia induida
             Pi(j) = Pi(j)+dPi(j);                          % Potencia induida
         end
         
-        if abs(Thrust(j)-W)> er
+        if abs(Thrust2(j)-W)> er
+            Thrust2(j)-W
            
-            if Thrust(j)-W>=0
+            if Thrust2(j)-W>=0
                thetamax = theta0it;
+               Thrust=0; Thrust2=0;
             else
             thetamin = theta0it;
+            Thrust=0; Thrust2=0;
             
             end
         else

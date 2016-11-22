@@ -160,7 +160,7 @@ for j=1:length(Vc)
     while abs(Thrust(j)-W)>er
         Thrust(j)-W
        
-        theta0it = 0.5*(thetamax+thetamin);   % calcul del punt mig de l'interval
+        theta0it = 0.5*deg2rad(thetamax+thetamin);   % calcul del punt mig de l'interval
         
         % Camp de velocitats induides
         
@@ -171,12 +171,12 @@ for j=1:length(Vc)
             lambdait1 = lambdai1;
             lambdait2 = lambdai1;
             
-            theta(i,j) = theta0it*(pi/180)+theta1(j)*r(i);  thetadeg(i,j) = theta(i,j)*(180/pi);  % angle theta [deg]
+            theta(i,j) = theta0it+theta1(j)*r(i);  thetadeg(i,j) = rad2deg(theta(i,j));  % angle theta [deg]
             F = 9;
             
             while abs(F)> er2
                 
-                phiit= atan((lambdait1+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);
+                phiit= atan((lambdait1+lambdac(j))/r(i)); phiitdeg=rad2deg(phiit);
                 alphait= thetadeg(i,j)-phiitdeg;
                 Mit = vtip * sqrt( ( (lambdait1+lambdac(j))^2 + r(i)^2 ) )/a;
                 [clit,cdit] = computeClCd(alphait, Mit);
@@ -186,7 +186,7 @@ for j=1:length(Vc)
                 F1 = AA*(BB*+lambdait1)*lambdait1-(CC*+(lambdait1+BB)^2)*EE;
                 
                 
-                phiit= atan((lambdait2+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);
+                phiit= atan((lambdait2+lambdac(j))/r(i)); phiitdeg=rad2deg(phiit);
                 alphait= thetadeg(i,j)-phiitdeg;
                 Mit = vtip * sqrt( ( (lambdait2+lambdac(j))^2 + r(i)^2 ) )/a;
                 [clit,cdit] = computeClCd(alphait, Mit);
@@ -200,7 +200,7 @@ for j=1:length(Vc)
                     
                     lambdait = 0.5*(lambdait1+lambdait2);
                     
-                    phiit= atan((lambdait+lambdac(j))/r(i)); phiitdeg=phiit*(180/pi);
+                    phiit= atan((lambdait+lambdac(j))/r(i)); phiitdeg=rad2deg(phiit);
                     alphait= thetadeg(i,j)-phiitdeg;
                     Mit = vtip * sqrt( ( (lambdait+lambdac(j))^2 + r(i)^2 ) )/a;
                     [clit,cdit] = computeClCd(alphait, Mit);
@@ -227,16 +227,16 @@ for j=1:length(Vc)
                 
             end
             
-            phi(i,j) = atan((lambda(i,j)+lambdac(j))/r(i));  phideg(i,j) = phi(i,j)*(180/pi);            % angle de la velocitat incident [deg]
-            alpha(i,j) = theta(i,j)-phi(i,j);  alphadeg(i,j) = alpha(i,j)*(180/pi);                  % angle d'atac [deg]
+            phi(i,j) = atan((lambda(i,j)+lambdac(j))/r(i));  phideg(i,j) = rad2deg(phi(i,j));            % angle de la velocitat incident [deg]
+            alpha(i,j) = theta(i,j)-phi(i,j);  alphadeg(i,j) = rad2deg(alpha(i,j));                  % angle d'atac [deg]
             M(i,j) = vtip*sqrt( (lambda(i,j)+lambdac(j))^2 + r(i)^2 )/a;                                    % numero de Mach a l'element de pala
             
             [cl(i,j),cd(i,j)] = computeClCd(alphadeg(i,j), M(i,j));               % funci� que d�na Cl i Cd en funci� d'alpha i Mach
             
             K2 = cl(i,j)*cos(phi(i,j))-cd(i,j)*sin(phi(i,j));  % coeficient utilitzat per partir l'expressi� del dT
             
-            dT(j) = nb*0.5*rho*c(i,j)*vtip^2*R*(r(i)^2+(lambda(i,j)+lambdac(j))^2)*K2*dr;   % Calucl diferencial de Thrust
-            Thrust(j) = Thrust(j)+dT(j);            % Thrust de l'helicopter [N]
+            dT(j) =- nb*0.5*rho*c(i,j)*vtip^2*R*(r(i)^2+(lambda(i,j)+lambdac(j))^2)*K2*dr;   % Calucl diferencial de Thrust
+            Thrust(j) = Thrust(j)+dT(j)          % Thrust de l'helicopter [N]
             
             dPi(j) = vtip*(lambda(i,j) + lambdac(j))*dT(j);   % Calcul diferencial de potencia induida
             Pi(j) = Pi(j)+dPi(j);                          % Potencia induida

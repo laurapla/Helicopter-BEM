@@ -76,24 +76,24 @@ Pi1=T1*vi;
 Po1v=0.5*rho*(Omegadisseny*R)^3*pi*R^2*sigmaideal.*r.^3;
 Po1=trapz(Po1v);
 
-% figure;
-% plot(rtotal,sigmaideal);
-% axis([0 1 0 1]);
-% xlabel('r')
-% ylabel('\sigma')
-% title('BEM ideal')
-% 
-% figure;
-% plot(rtotal,cideal);
-% xlabel('r')
-% ylabel('c (m)')
-% title('BEM ideal')
-% 
-% figure;
-% plot(r,thetaideal);
-% xlabel('r')
-% ylabel('\theta')
-% title('BEM ideal')
+figure;
+plot(rtotal,sigmaideal);
+axis([0 1 0 1]);
+xlabel('r')
+ylabel('\sigma')
+title('BEM ideal')
+
+figure;
+plot(rtotal,cideal);
+xlabel('r')
+ylabel('c (m)')
+title('BEM ideal')
+
+figure;
+plot(r,thetaideal);
+xlabel('r')
+ylabel('\theta')
+title('BEM ideal')
 
 fprintf('MTH calculat\n\n')
 
@@ -116,10 +116,10 @@ end
 theta1 = (thetaideal(l+1)-thetaideal(l-1))/(r(l+1)-r(l-1));
 
 % Per comprovar que l'aproximació lineal de sigma quadra
-% figure;
-% plot(r,sigmaideal,r,sigma)
-% legend('\sigma ideal','\sigma aproximada (r=0.7)')
-% grid on
+figure;
+plot(r,sigmaideal,r,sigma)
+legend('\sigma ideal','\sigma aproximada (r=0.7)')
+grid on
 
 lambda = zeros(1,nnodes);
 phi = zeros(1,nnodes);
@@ -179,6 +179,9 @@ while abs(Thrust-W)>=1e-2
     P = 0;
     for i = 1:nnodes
         dT = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(Cl(i)*cos(phi(i))-Cd(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
+        if isnan(dT)
+            dT = 0;
+        end
         Thrust = Thrust+dT;
         dP = vtip*(lambda(i)+lambdac)*dT;
         P = P+dP;
@@ -192,17 +195,19 @@ while abs(Thrust-W)>=1e-2
     
 end
 
-% figure;
-% plot(r,lambda);
-% xlabel('r');
-% ylabel('\lambda_{i}');
-% title('BEM sense pèrdues');
-% 
-% figure;
-% plot(r,thet);
-% xlabel('r');
-% ylabel('\theta (rad)');
-% title('BEM sense pèrdues');
+theta0BEMideal = theta0;
+
+figure;
+plot(r,lambda);
+xlabel('r');
+ylabel('\lambda_{i}');
+title('BEM sense pèrdues');
+
+figure;
+plot(r,thet);
+xlabel('r');
+ylabel('\theta (rad)');
+title('BEM sense pèrdues');
 
 nb = ceil(sigma(1)*pi*R/0.5);
 if nb>=7
@@ -210,11 +215,11 @@ if nb>=7
 end
 
 c=sigma*pi*R/nb;
-% figure;
-% plot(r,c);
-% xlabel('r');
-% ylabel('c (m)');
-% title('BEM sense pèrdues');
+figure;
+plot(r,c);
+xlabel('r');
+ylabel('c (m)');
+title('BEM sense pèrdues');
 
 Po2v=nb*rho*0.5*(Omegadisseny*R)^2*0.0051*R^2*Omegadisseny*c.*(r.^2).*sqrt(r.^2+lambda.^2);
 Po2=trapz(Po2v);
@@ -327,7 +332,7 @@ while abs(ThrustPrandtl-W)>=1e2 % Si poso un error més petit no em convergeix
         PPrandtl = PPrandtl+dP;
     end
     
-    if Thrust-W<0
+    if ThrustPrandtl-W<0
         thetamin = theta0;
     else
         thetamax = theta0;
@@ -335,22 +340,23 @@ while abs(ThrustPrandtl-W)>=1e2 % Si poso un error més petit no em convergeix
     
 end
 
-% figure;
-% plot(r,lambda,r,lambdaPrandtl);
-% title('BEM+pèrdues+compressibilitat');
-% legend('\lambda sense pèrdues','\lambda amb pèrdues');
-% 
-% figure;
-% plot(r,FPrandtl);
-% xlabel('r');
-% ylabel('F');
-% title('BEM+pèrdues+compressibilitat');
-% 
-% figure;
-% plot(r,thetaPrandtl);
-% xlabel('r');
-% ylabel('\theta (rad)');
-% title('BEM+pèrdues+compressibilitat');
+theta0BEMPrandtl = theta0;
+figure;
+plot(r,lambda,r,lambdaPrandtl);
+title('BEM+pèrdues+compressibilitat');
+legend('\lambda sense pèrdues','\lambda amb pèrdues');
+
+figure;
+plot(r,FPrandtl);
+xlabel('r');
+ylabel('F');
+title('BEM+pèrdues+compressibilitat');
+
+figure;
+plot(r,thetaPrandtl);
+xlabel('r');
+ylabel('\theta (rad)');
+title('BEM+pèrdues+compressibilitat');
 
 fprintf('BEM+pèrdues+compressibilitat calculat\n\n')
 

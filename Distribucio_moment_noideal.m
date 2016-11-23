@@ -1,8 +1,9 @@
 %% Distribucio_moments_noideal
+dM=zeros(nnodes,length(Vc));
 for i=1:nnodes
     for j=1:length(Vc)
         for k=i:nnodes
-            dM(i,j)=dL(k,j)*(r(k)-r(i))*R;
+            dM(i,j)=dM(i,j)+dL(k,j)*(r(k)-r(i))*R;
         end
     end
 end

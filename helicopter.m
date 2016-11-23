@@ -178,12 +178,16 @@ while abs(Thrust-W)>=1e-2
     Thrust = 0;
     P = 0;
     for i = 1:nnodes
-        dT = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(Cl(i)*cos(phi(i))-Cd(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
-        if isnan(dT)
-            dT = 0;
+        dT(i) = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(Cl(i)*cos(phi(i))-Cd(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
+        if isnan(dT(i))
+            dT(i) = 0;
         end
-        Thrust = Thrust+dT;
-        dP = vtip*(lambda(i)+lambdac)*dT;
+        Thrust = Thrust+dT(i);
+        dM(i)=dT(i)*r(i)*R;
+        if isnan(lambda(i))
+            lambda(i) = 0;
+        end
+        dP = vtip*(lambda(i)+lambdac)*dT(i);
         P = P+dP;
     end
     
@@ -220,6 +224,18 @@ plot(r,c);
 xlabel('r');
 ylabel('c (m)');
 title('BEM sense pèrdues');
+
+figure;
+plot(r,dT);
+xlabel('r');
+ylabel('Sustentació (N)');
+title('Distribució de sustentació BEM sense pèrdues');
+
+figure;
+plot(r,dM);
+xlabel('r');
+ylabel('Moment (N*m)');
+title('Distribució de moment BEM sense pèrdues');
 
 fprintf('BEM ideal calculat\n\n')
 
@@ -320,12 +336,16 @@ while abs(ThrustPrandtl-W)>=1e2 % Si poso un error més petit no em convergeix
     ThrustPrandtl = 0;
     PPrandtl = 0;
     for i = 1:nnodes
-        dT = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(ClPrandtl(i)*cos(phi(i))-CdPrandtl(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
-        if isnan(dT)
-            dT = 0;
+        dTP(i) = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda(i))^2)*(ClPrandtl(i)*cos(phi(i))-CdPrandtl(i)*sin(phi(i)))*sigma(i)*pi*R^2*dr;
+        if isnan(dTP(i))
+            dTP(i) = 0;
         end
-        ThrustPrandtl = ThrustPrandtl+dT;
-        dP = vtip*(lambda(i)+lambdac)*dT;
+        ThrustPrandtl = ThrustPrandtl+dTP(i);
+        dMP(i)=dTP(i)*r(i)*R;
+        if isnan(lambda(i))
+            lambda(i) = 0;
+        end
+        dP = vtip*(lambda(i)+lambdac)*dTP(i);
         PPrandtl = PPrandtl+dP;
     end
     
@@ -354,6 +374,18 @@ plot(r,thetaPrandtl);
 xlabel('r');
 ylabel('\theta (rad)');
 title('BEM+pèrdues+compressibilitat');
+
+figure;
+plot(r,dTP);
+xlabel('r');
+ylabel('Sustentació (N)');
+title('Distribució de sustentació BEM+pèrdues+compressibilitat');
+
+figure;
+plot(r,dMP);
+xlabel('r');
+ylabel('Moment (N*m)');
+title('Distribució de moment BEM+pèrdues+compressibilitat');
 
 fprintf('BEM+pèrdues+compressibilitat calculat\n\n')
 
@@ -414,9 +446,12 @@ while abs(Thrust0-W)>=1e2
     Thrust0 = 0;
     P0 = 0;
     for i = 1:nnodes
-        dT = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda0(i))^2)*(Cl0(i)*cos(phi0(i))-Cd0(i)*sin(phi0(i)))*sigma(i)*pi*R^2*dr;
-        Thrust0 = Thrust0+dT;
-        dP = vtip*(lambda0(i)+lambdac)*dT;
+        dTtheta(i) = 0.5*rho*vtip^2*(r(i)^2+(lambdac+lambda0(i))^2)*(Cl0(i)*cos(phi0(i))-Cd0(i)*sin(phi0(i)))*sigma(i)*pi*R^2*dr;
+        Thrust0 = Thrust0+dTtheta(i);
+        if isnan(lambda(i))
+            lambda(i) = 0;
+        end
+        dP = vtip*(lambda0(i)+lambdac)*dTtheta(i);
         P0 = P0+dP;
     end
     
@@ -549,6 +584,9 @@ while abs(ThrustPrandtl0-W)>=1e2
             dT = 0;
         end
         ThrustPrandtl0 = ThrustPrandtl0+dT;
+        if isnan(lambda(i))
+            lambda(i) = 0;
+        end
         dP = vtip*(lambda0(i)+lambdac)*dT;
         PPrandtl0 = PPrandtl0+dP;
     end

@@ -1,7 +1,9 @@
 %% Calcul distribucio del moment-ideal
 for i=1:nnodes
     for j=1:nVc
-        dM(i,j)=dL(i,j)*r(i)*R;
+        for k=i:nnodes
+            dM(i,j)=dL(k,j)*(r(k)-r(i))*R;
+        end
     end
 end
 figure;

@@ -183,7 +183,6 @@ while abs(Thrust-W)>=1e-2
             dT(i) = 0;
         end
         Thrust = Thrust+dT(i);
-        dM(i)=dT(i)*r(i)*R;
         if isnan(lambda(i))
             lambda(i) = 0;
         end
@@ -197,6 +196,13 @@ while abs(Thrust-W)>=1e-2
         thetamax = theta0;
     end
     
+end
+
+Moment=zeros(1,nnodes);
+for i=1:nnodes
+    for j=1:nnodes
+        Moment(i)=dT(j)*R*(r(j)-r(i));
+    end
 end
 
 theta0BEMideal = theta0;
@@ -232,7 +238,7 @@ ylabel('Sustentació (N)');
 title('Distribució de sustentació BEM sense pèrdues');
 
 figure;
-plot(r,dM);
+plot(r,Moment);
 xlabel('r');
 ylabel('Moment (N*m)');
 title('Distribució de moment BEM sense pèrdues');
@@ -341,7 +347,6 @@ while abs(ThrustPrandtl-W)>=1e2 % Si poso un error més petit no em convergeix
             dTP(i) = 0;
         end
         ThrustPrandtl = ThrustPrandtl+dTP(i);
-        dMP(i)=dTP(i)*r(i)*R;
         if isnan(lambda(i))
             lambda(i) = 0;
         end
@@ -355,6 +360,13 @@ while abs(ThrustPrandtl-W)>=1e2 % Si poso un error més petit no em convergeix
         thetamax = theta0;
     end
     
+end
+
+MomentP=zeros(1,nnodes);
+for i=1:nnodes
+    for j=1:nnodes
+        MomentP(i)=dTP(j)*R*(r(j)-r(i));
+    end
 end
 
 theta0BEMPrandtl = theta0;
@@ -382,7 +394,7 @@ ylabel('Sustentació (N)');
 title('Distribució de sustentació BEM+pèrdues+compressibilitat');
 
 figure;
-plot(r,dMP);
+plot(r,Moment);
 xlabel('r');
 ylabel('Moment (N*m)');
 title('Distribució de moment BEM+pèrdues+compressibilitat');
